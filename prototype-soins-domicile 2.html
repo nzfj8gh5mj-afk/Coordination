@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prototype – Gestion des soins à domicile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F5F2; --surface:#FFFFFF; --ink:#16202A; --muted:#55616C; --line:#DDE1DA; --line2:#EEF0EC;
+  --accent:#2B78B8; --accent-ink:#FFFFFF; --accent-dark:#1F5F95; --side:#EAF3FB; --side-ink:#12324F; --side-active:#CFE3F5;
+  --tint:#DCEBF8; --tint-ink:#1F5F95;
+  --ok-bg:#E6F4EA; --ok:#1E6B34; --warn-bg:#FFF1D6; --warn:#7A4B00; --bad-bg:#FCE8E6; --bad:#9B1C1C;
+  --conf-bg:#FFF8F1; --conf:#E8833A; --conf-ink:#8A3B00; --grey-bg:#EEF0EC; --grey:#44505B;
+  --font:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161B; --surface:#1A2129; --ink:#E8ECEF; --muted:#9AA6B1; --line:#2C3640; --line2:#232C35;
+    --accent:#4A93D6; --accent-ink:#0B1520; --accent-dark:#7AB3E6; --side:#152230; --side-ink:#D6E7F7; --side-active:#20374D;
+    --tint:#1D3346; --tint-ink:#9CC8EE;
+    --ok-bg:#16301F; --ok:#7FD39A; --warn-bg:#3A2C10; --warn:#F2C46B; --bad-bg:#3A1A1A; --bad:#F2A3A3;
+    --conf-bg:#2E2114; --conf:#E8833A; --conf-ink:#F5B47E; --grey-bg:#232C35; --grey:#B6C0C9; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161B; --surface:#1A2129; --ink:#E8ECEF; --muted:#9AA6B1; --line:#2C3640; --line2:#232C35;
+  --accent:#4A93D6; --accent-ink:#0B1520; --accent-dark:#7AB3E6; --side:#152230; --side-ink:#D6E7F7; --side-active:#20374D;
+  --tint:#1D3346; --tint-ink:#9CC8EE;
+  --ok-bg:#16301F; --ok:#7FD39A; --warn-bg:#3A2C10; --warn:#F2C46B; --bad-bg:#3A1A1A; --bad:#F2A3A3;
+  --conf-bg:#2E2114; --conf:#E8833A; --conf-ink:#F5B47E; --grey-bg:#232C35; --grey:#B6C0C9; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app{display:flex;min-height:100vh}
+.side{width:236px;flex:none;background:var(--side);color:var(--side-ink);padding:20px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow:auto}
+.brand{font-weight:700;font-size:18px;padding:0 10px 16px}
+.nav a{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;border-radius:8px;color:var(--side-ink);text-decoration:none;font-size:14px;min-height:44px}
+.nav a[aria-current="page"]{background:var(--side-active);font-weight:600}
+.badge{background:var(--conf);color:#16202A;font-weight:700;font-size:12px;border-radius:10px;padding:1px 8px}
+.who{margin-top:auto;padding:12px 10px 0;border-top:1px solid var(--side-active);font-size:13px;display:flex;flex-direction:column;gap:6px}
+.main{flex:1;min-width:0;padding:24px 28px 96px;display:flex;flex-direction:column;gap:18px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.kicker{font-size:13px;color:var(--muted);font-weight:500}
+h1{margin:2px 0 0;font-size:26px;line-height:1.2}
+h2{margin:0;font-size:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px;min-height:44px;cursor:pointer}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.warn{background:var(--conf-bg);border-color:var(--conf);color:var(--conf-ink)}
+.btn.small{min-height:36px;padding:6px 10px;font-size:13px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:18px;padding:7px 12px;font-size:13px;cursor:pointer;min-height:36px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.pad{padding:16px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;max-width:100%;overflow-wrap:anywhere}
+.t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}
+.t-info{background:var(--tint);color:var(--tint-ink)}.t-grey{background:var(--grey-bg);color:var(--grey)}
+.banner{border-radius:10px;padding:12px 16px;font-size:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.banner.conf{background:var(--conf-bg);border:1px solid var(--conf);color:var(--conf-ink)}
+.banner.info{background:var(--tint);color:var(--tint-ink)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.grid-plan{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(185px,1fr);gap:14px;overflow-x:auto;padding-bottom:6px}
+.col{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.col header{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.pcard{border:1px solid var(--line);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:3px;background:var(--surface);text-align:left;cursor:pointer;width:100%}
+.pcard .h{font-size:12px;color:var(--accent-dark);font-weight:700}
+.pcard.conf{border:2px solid var(--conf);background:var(--conf-bg)}
+.pcard.conf .h{color:var(--conf-ink)}
+.pcard.susp{border-style:dashed;background:var(--bg);color:var(--muted)}
+.pcard.done{border-color:var(--ok)}
+.list .item{padding:13px 16px;border-top:1px solid var(--line2);display:flex;flex-direction:column;gap:3px;cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
+.list .item:first-child{border-top:0}
+.list .item[aria-current="true"]{background:var(--tint)}
+.split{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.split>.a{flex:999 1 440px;min-width:0}
+.split>.b{flex:1 1 360px;min-width:0}
+dl.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;margin:0}
+dl.kv dt{font-size:12px;color:var(--muted)}dl.kv dd{margin:2px 0 0;font-weight:500}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600}
+label.f input,label.f select,label.f textarea{font-weight:400;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-height:44px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.form .full{grid-column:1/-1}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi .v{font-size:30px;font-weight:700}
+.bar{flex:1;background:var(--grey-bg);border-radius:6px;height:14px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--accent)}
+.tr{border:1px solid var(--line);border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:5px}
+.tr b.l{color:var(--accent-dark)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13px}
+.dot{flex:none;width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.dot.ok{background:var(--ok);color:#fff}.dot.no{background:var(--conf);color:#16202A}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--line2);font-size:14px;vertical-align:top}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--tint)}
+.scroll{overflow-x:auto}
+dialog{border:0;border-radius:14px;padding:0;max-width:min(560px,94vw);width:100%;background:var(--surface);color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(10,20,30,.45)}
+.dlg-h{padding:16px 18px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dlg-b{padding:16px 18px;display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow:auto}
+.dlg-f{padding:12px 18px 16px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--line2)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:50;max-width:90vw}
+.visit{display:flex;flex-direction:column;gap:8px;padding:14px}
+.visit.next{border:2px solid var(--accent)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.tabbar{display:none}
+.foot{font-size:12px;color:var(--muted)}
+@media (max-width:820px){
+  .side{display:none}
+  .main{padding:16px 14px 100px}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));z-index:20;justify-content:space-around}
+  .tabbar a{flex:1;text-align:center;font-size:11.5px;color:var(--muted);text-decoration:none;padding:8px 2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .tabbar a[aria-current="page"]{color:var(--accent);font-weight:700}
+  .form{grid-template-columns:1fr}
+  dl.kv{grid-template-columns:1fr 1fr}
+  h1{font-size:22px}
+}
+@media (prefers-reduced-motion:no-preference){.pcard,.btn{transition:background .15s}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" aria-label="Navigation principale">
+    <div class="brand">[Nom de l'app]</div>
+    <nav class="nav" id="nav"></nav>
+    <div class="who">
+      <label class="f" style="font-size:12px">Connecté en tant que
+        <select id="whoSel"></select>
+      </label>
+      <span id="syncState" class="muted" style="font-size:12px"></span>
+    </div>
+  </aside>
+  <main class="main" id="main"><div class="empty">Chargement…</div></main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Navigation"></nav>
+<dialog id="dlg"></dialog>
+<div id="toastBox"></div>
+
+<script>
+(function(){
+'use strict';
+/* ---------- utilitaires ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad2 = n => String(n).padStart(2,'0');
+const iso = d => d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+const parseIso = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d=parseIso(s); d.setDate(d.getDate()+n); return iso(d); };
+const today = () => iso(new Date());
+const nowHM = () => { const d=new Date(); return pad2(d.getHours())+':'+pad2(d.getMinutes()); };
+const JOURS = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+const JOURS_L = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const longDate = s => { const d=parseIso(s); return JOURS_L[d.getDay()]+' '+d.getDate()+' '+MOIS[d.getMonth()]+' '+d.getFullYear(); };
+const shortDate = s => { const d=parseIso(s); return pad2(d.getDate())+'/'+pad2(d.getMonth()+1); };
+const uid = p => p+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3);
+const toMin = h => { const [a,b]=(h||'00:00').split(':').map(Number); return a*60+b; };
+const fromMin = m => pad2(Math.floor(m/60))+':'+pad2(m%60);
+const tourneeOf = h => toMin(h) < 660 ? 'matin' : (toMin(h) < 840 ? 'midi' : 'soir');
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ---------- données d'exemple (fictives) ---------- */
+function demoState(){
+  const t = today();
+  return {
+    v:1,
+    nurses:[
+      {id:'n1',nom:'Sophie M.',genre:'F',statut:'Infirmière salariée',competences:'Palliatif, diabète'},
+      {id:'n2',nom:'Karim B.',genre:'M',statut:'Infirmier indépendant',competences:'Plaies, prises de sang'},
+      {id:'n3',nom:'Julie V.',genre:'F',statut:'Infirmière indépendante',competences:'Palliatif'},
+      {id:'n4',nom:'Nabil K.',genre:'M',statut:'Infirmier salarié',competences:'Diabète, stomies'}
+    ],
+    patients:[
+      P('p1','Mme Claes M.','F',84,'Rue des Tilleuls 12, 1300 Wavre','Boîte à clés à gauche de la porte, 2e étage sans ascenseur','Fille (WhatsApp)',{genre:null,exclus:[],avant:null},['Soins palliatifs · nouveau protocole'],addDays(t,48),
+        [plan('Confort, antalgie',[0,1,2,3,4,5,6],'08:45',40,'n1'),plan('Confort',[0,1,2,3,4,5,6],'18:00',20,'n2')]),
+      P('p2','M. Dubois R.','M',71,'Avenue du Parc 4, 1340 Ottignies','Sonnette « Dubois », rez-de-chaussée','Épouse',{genre:null,exclus:[],avant:null},['Diabète insulinodépendant'],addDays(t,3),
+        [plan('Insuline, glycémie',[0,1,2,3,4,5,6],'08:10',20,'n1'),plan('Insuline, glycémie',[0,1,2,3,4,5,6],'17:30',20,'n4')]),
+      P('p3','Mme Laurent A.','F',88,'Rue Haute 51, 1330 Rixensart','Code porte 1452B','Fils',{genre:'F',exclus:[],avant:null},['Souhaite uniquement des soignantes'],addDays(t,80),
+        [plan('Toilette complète, pilulier',[0,1,2,3,4,5,6],'07:30',30,'n1')]),
+      P('p4','Mme Lambert S.','F',79,'Chaussée de Bruxelles 210, 1410 Waterloo','Clé chez la voisine du 1er','Belle-fille',{genre:null,exclus:['n2'],avant:'10:00'},['Aide familiale à 11 h'],addDays(t,6),
+        [plan('Toilette, pilulier',[1,2,3,4,5,6],'09:30',30,'n3')]),
+      P('p5','M. Janssens P.','M',82,'Rue du Moulin 8, 1300 Wavre','Porte de derrière','Fille',{genre:null,exclus:[],avant:null},[],addDays(t,70),
+        [plan('Toilette, pilulier',[0,1,2,3,4,5,6],'08:20',30,'n2')],[{du:t,au:addDays(t,3),motif:'Hospitalisation'}]),
+      P('p6','Mme Martin J.','F',67,'Rue de la Station 3, 1340 Ottignies','Appartement 2B','Aide familiale',{genre:null,exclus:[],avant:null},['À jeun pour les prises de sang'],addDays(t,20),
+        [plan('Prise de sang',[2],'08:20',20,'n2')]),
+      P('p7','M. Peeters L.','M',90,'Place communale 2, 1330 Rixensart','Sonner deux fois','Fils',{genre:null,exclus:[],avant:'10:45'},['Aide familiale à 11 h'],addDays(t,40),
+        [plan('Toilette, bas de contention',[1,2,3,4,5,6],'10:50',30,'n3')]),
+      P('p8','M. Renard T.','M',58,'Rue des Écoles 19, 7190 Écaussinnes','Rez, porte verte','Lui-même',{genre:null,exclus:[],avant:null},['Soin de plaie post-opératoire'],addDays(t,12),
+        [plan('Soin de plaie',[2,5],'17:45',20,null)])
+    ],
+    demandes:[
+      {id:'d1',type:'nouvelle',statut:'recue',patientNom:'Mme Simon D.',patientId:null,genre:'F',adresse:'Avenue Jean XXIII 17, 1330 Rixensart',soins:'Toilette, pilulier',jours:[1,2,4,5],debut:addDays(t,1),heure:'12:00',prefs:'',contact:'Fille',source:'Centre de coordination',creeLe:Date.now()-12*60000,historique:[{t:Date.now()-12*60000,txt:'Demande reçue du centre de coordination'}]},
+      {id:'d2',type:'annulation',statut:'recue',patientId:'p4',date:addDays(t,1),motif:'Problème de salle de bain',source:'Famille',creeLe:Date.now()-65*60000,historique:[{t:Date.now()-65*60000,txt:'Demande reçue de la famille'}]},
+      {id:'d3',type:'reprise',statut:'recue',patientId:'p5',date:addDays(t,4),motif:'Sortie d\u2019hôpital',source:'Centre de coordination',creeLe:Date.now()-120*60000,historique:[{t:Date.now()-120*60000,txt:'Demande reçue du centre de coordination'}]}
+    ],
+    visites:{}, overrides:{}, retards:[]
+  };
+  function plan(soins,jours,heure,duree,nurseId){ return {id:uid('pl'),soins,jours,heure,duree,nurseId,debut:addDays(t,-30),fin:null}; }
+  function P(id,nom,genre,age,adresse,acces,contact,prefs,alertes,presc,plans,absences){
+    return {id,nom,genre,age,adresse,acces,contact,prefs,alertes,prescriptionJusqu:presc,statut:'actif',plans,absences:absences||[],transmissions:[]};
+  }
+}
+
+/* ---------- état et synchronisation ---------- */
+let S = null;            // état courant
+let db = null, docRef = null, mode = 'init', pending = null, lastRemote = '';
+let downloads = null, sampler = null;
+let who = 'coord';
+let route = {view:'planning'};
+let ui = {date: today(), tournee:'toutes', demandeSel:null, demandeFiltre:'atraiter', patientQ:'', trFiltre:'toutes'};
+const LS_KEY = 'proto-soins-etat-v1';
+const emptyState = () => ({v:1,nurses:[],patients:[],demandes:[],visites:{},overrides:{},retards:[]});
+
+function lsGet(){ try { const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; } catch(e){ return null; } }
+function lsSet(v){ try { localStorage.setItem(LS_KEY, JSON.stringify(v)); } catch(e){} }
+
+function save(){
+  if (mode === 'db' && docRef){
+    clearTimeout(pending);
+    pending = setTimeout(async () => {
+      const json = JSON.stringify(S); lastRemote = json;
+      try { await docRef.set({json, at: Date.now()}); setSync('Synchronisé avec l\u2019équipe'); }
+      catch(e){ setSync('Échec de la synchronisation : ' + (e && e.code || 'erreur')); }
+    }, 350);
+  } else { lsSet(S); }
+}
+function setSync(t){ const el=document.getElementById('syncState'); if(el) el.textContent=t; }
+function commit(fn, msg){ fn(S); save(); render(); if (msg) toast(msg); }
+
+async function initStore(){
+  const local = lsGet();
+  S = local || demoState(); mode = 'local';
+  setSync('Mode local : données sur cet appareil');
+  render();
+  if (!window.claude || typeof window.claude.use !== 'function') return;
+  window.claude.use('downloads').then(d => { downloads = d; }).catch(() => {});
+  window.claude.use('sample').then(x => { sampler = x; }).catch(() => {});
+  try {
+    db = await window.claude.use('db');
+  } catch(e){ db = null; }
+  if (!db) return;
+  docRef = db.doc('proto/etat');
+  mode = 'db'; setSync('Connexion à l\u2019espace partagé…');
+  docRef.onSnapshot(snap => {
+    if (snap.exists){
+      const d = snap.data(); if (!d || typeof d.json !== 'string') return;
+      if (d.json === lastRemote && S) { setSync('Synchronisé avec l\u2019équipe'); return; }
+      try { S = JSON.parse(d.json); lastRemote = d.json; setSync('Synchronisé avec l\u2019équipe'); render(); } catch(e){}
+    } else {
+      S = null; setSync('Espace partagé vide'); render();
+    }
+  }, err => { setSync('Synchronisation indisponible (' + (err && err.code || 'erreur') + ')'); });
+}
+
+/* ---------- calculs métier ---------- */
+const nurse = id => S.nurses.find(n => n.id === id);
+const patient = id => S.patients.find(p => p.id === id);
+const absentOn = (p, date) => (p.absences||[]).find(a => date >= a.du && (!a.au || date <= a.au));
+
+function passagesFor(date){
+  const dow = parseIso(date).getDay(); const out = [];
+  for (const p of S.patients){
+    if (p.statut !== 'actif') continue;
+    for (const pl of p.plans){
+      if (!pl.jours.includes(dow)) continue;
+      if (pl.debut && date < pl.debut) continue;
+      if (pl.fin && date > pl.fin) continue;
+      const key = date + '|' + pl.id; const ov = S.overrides[key] || {};
+      const heure = ov.heure || pl.heure;
+      out.push({key, date, p, pl, nurseId: ('nurseId' in ov) ? ov.nurseId : pl.nurseId, heure, duree: pl.duree || 30,
+        tournee: tourneeOf(heure), suspendu: absentOn(p,date), annule: !!ov.annule, motifAnnul: ov.motif, visite: S.visites[key] || null});
+    }
+  }
+  return out.sort((a,b) => toMin(a.heure) - toMin(b.heure));
+}
+function conflictsOf(list){
+  const res = {};
+  const add = (k, t) => (res[k] = res[k] || []).push(t);
+  const active = list.filter(x => !x.suspendu && !x.annule);
+  for (const x of active){
+    const n = x.nurseId && nurse(x.nurseId);
+    if (n){
+      if ((x.p.prefs.exclus||[]).includes(n.id)) add(x.key, n.nom + ' est exclu(e) par le patient');
+      if (x.p.prefs.genre === 'F' && n.genre === 'M') add(x.key, 'Le patient souhaite une soignante');
+    }
+    if (x.p.prefs.avant && toMin(x.heure) >= toMin(x.p.prefs.avant)) add(x.key, 'Prévu après ' + x.p.prefs.avant + ' (limite du patient)');
+    if (x.p.prescriptionJusqu && x.date > x.p.prescriptionJusqu) add(x.key, 'Prescription expirée');
+  }
+  for (const n of S.nurses){
+    const mine = active.filter(x => x.nurseId === n.id);
+    for (let i=0;i<mine.length;i++) for (let j=i+1;j<mine.length;j++){
+      const a=mine[i], b=mine[j];
+      if (toMin(a.heure) < toMin(b.heure)+b.duree && toMin(b.heure) < toMin(a.heure)+a.duree){
+        add(a.key, 'Chevauche ' + b.p.nom + ' (' + b.heure + ')'); add(b.key, 'Chevauche ' + a.p.nom + ' (' + a.heure + ')');
+      }
+    }
+  }
+  return res;
+}
+const pendingDemandes = () => S.demandes.filter(d => d.statut === 'recue' || d.statut === 'proposee');
+
+/* ---------- rendu général ---------- */
+const VIEWS = [
+  ['planning','Planning'],['demandes','Demandes'],['patients','Patients'],['tournee','Ma tournée'],['tableau','Tableau de bord'],['equipe','Équipe et données']
+];
+function navHtml(mobile){
+  return VIEWS.map(([id,label]) => {
+    const n = id==='demandes' && S ? pendingDemandes().length : 0;
+    const cur = route.view === id || (id==='patients' && route.view==='patient');
+    return '<a href="#'+id+'"'+(cur?' aria-current="page"':'')+'><span>'+label+'</span>'+(n && !mobile ? '<span class="badge">'+n+'</span>' : (n?'<span class="badge">'+n+'</span>':''))+'</a>';
+  }).join('');
+}
+function render(){
+  const main = document.getElementById('main');
+  if (!S){
+    main.innerHTML = '<div class="card empty"><h2>Aucune donnée pour l\u2019instant</h2><p>L\u2019espace partagé de l\u2019équipe est vide.</p><div class="row" style="justify-content:center"><button class="btn primary" id="emptyBtn">Commencer avec une version vide</button><button class="btn" id="seedBtn">Charger les données d\u2019exemple</button></div></div>';
+    document.getElementById('seedBtn').onclick = () => { S = demoState(); save(); render(); };
+    document.getElementById('emptyBtn').onclick = () => { S = emptyState(); save(); location.hash = '#equipe'; render(); };
+    return;
+  }
+  document.getElementById('nav').innerHTML = navHtml(false);
+  document.getElementById('tabbar').innerHTML = navHtml(true);
+  const sel = document.getElementById('whoSel');
+  sel.innerHTML = '<option value="coord">Coordination</option>' + S.nurses.map(n => '<option value="'+n.id+'">'+esc(n.nom)+'</option>').join('');
+  sel.value = who;
+  const v = route.view;
+  main.innerHTML = (v==='planning'?vPlanning():v==='demandes'?vDemandes():v==='patients'?vPatients():v==='patient'?vPatient(route.id):v==='tournee'?vTournee():v==='equipe'?vEquipe():vTableau())
+    + '<p class="foot">Outil de coordination. Protégez vos patients : utilisez des initiales ou un code patient, et gardez le dossier médical complet dans votre logiciel infirmier officiel.</p>';
+  bind(main);
+}
+function toast(t){
+  const box = document.getElementById('toastBox');
+  box.innerHTML = '<div class="toast" role="status">'+esc(t)+'</div>';
+  clearTimeout(toast._t); toast._t = setTimeout(() => box.innerHTML = '', 2600);
+}
+function whoName(){ return who==='coord' ? 'Coordination' : (nurse(who)||{}).nom || 'Inconnu'; }
+
+/* ---------- vue : planning ---------- */
+function vPlanning(){
+  const list = passagesFor(ui.date);
+  const conf = conflictsOf(list);
+  const shown = list.filter(x => ui.tournee==='toutes' || x.tournee===ui.tournee);
+  const nConf = Object.keys(conf).filter(k => shown.some(x => x.key===k)).length;
+  const col = (title, items, sub) => '<section class="col"><header><strong>'+esc(title)+'</strong><span class="muted small">'+sub+'</span></header>' +
+    (items.length ? items.map(x => pcard(x, conf[x.key])).join('') : '<div class="muted small" style="padding:8px 0">Aucun passage</div>') + '</section>';
+  const cols = S.nurses.map(n => { const it = shown.filter(x => x.nurseId===n.id); return col(n.nom, it, it.filter(x=>!x.suspendu&&!x.annule).length+' passage(s)'); });
+  const un = shown.filter(x => !x.nurseId || !nurse(x.nurseId));
+  cols.push(col('Non assignés', un, un.length+' passage(s)'));
+  const chips = ['toutes','matin','midi','soir'].map(t => '<button class="chip" data-act="tournee" data-v="'+t+'" aria-pressed="'+(ui.tournee===t)+'">'+(t==='toutes'?'Toutes':t[0].toUpperCase()+t.slice(1))+'</button>').join('');
+  const confList = Object.entries(conf).filter(([k]) => shown.some(x=>x.key===k)).map(([k,arr]) => { const x = list.find(y=>y.key===k); return '<span>'+esc(x.p.nom)+' ('+x.heure+') : '+esc(arr.join(', '))+'</span>'; });
+  if (!S.nurses.length || !S.patients.length) return '<div class="top"><div><div class="kicker">Planning des tournées</div><h1>Bienvenue</h1></div></div><div class="card pad" style="display:flex;flex-direction:column;gap:12px;max-width:640px"><h2>Pour commencer</h2><div class="check"><span class="dot '+(S.nurses.length?'ok':'no')+'">'+(S.nurses.length?'✓':'1')+'</span><span>Ajoutez votre équipe d\u2019infirmiers dans <a href="#equipe">Équipe et données</a>.</span></div><div class="check"><span class="dot '+(S.patients.length?'ok':'no')+'">'+(S.patients.length?'✓':'2')+'</span><span>Ajoutez vos patients et leurs soins dans <a href="#patients">Patients</a>, ou collez un message WhatsApp dans <a href="#demandes">Demandes</a>.</span></div></div>';
+  return '<div class="top"><div><div class="kicker">Planning des tournées</div><h1>'+esc(longDate(ui.date))+'</h1></div>' +
+    '<div class="row"><button class="btn small" data-act="day" data-v="-1" aria-label="Jour précédent">‹</button>' +
+    '<input type="date" id="dateIn" value="'+ui.date+'" class="btn small" aria-label="Date">' +
+    '<button class="btn small" data-act="day" data-v="1" aria-label="Jour suivant">›</button>' +
+    '<button class="btn small" data-act="today">Aujourd\u2019hui</button></div></div>' +
+    '<div class="row">'+chips+'</div>' +
+    (nConf ? '<div class="banner conf" role="status"><strong>'+nConf+' conflit(s) à résoudre</strong>'+confList.join(' · ')+'</div>' : '<div class="banner info">Aucun conflit détecté pour cette sélection.</div>') +
+    '<div class="grid-plan">'+cols.join('')+'</div>' +
+    '<p class="muted small">Touchez un passage pour le réaffecter, changer l\u2019heure ou l\u2019annuler. Les conflits (soignant exclu, soignante demandée, chevauchement, heure limite, prescription expirée) sont vérifiés automatiquement.</p>';
+}
+function pcard(x, conf){
+  let cls = 'pcard', head = x.heure + ' – ' + fromMin(toMin(x.heure)+x.duree), extra = '';
+  if (x.suspendu){ cls += ' susp'; head = 'Suspendu'; extra = '<span class="small">'+esc(x.suspendu.motif)+(x.suspendu.au?' · reprise le '+shortDate(addDays(x.suspendu.au,1)):'')+'</span>'; }
+  else if (x.annule){ cls += ' susp'; head = 'Annulé · ' + x.heure; extra = '<span class="small">'+esc(x.motifAnnul||'')+'</span>'; }
+  else if (conf){ cls += ' conf'; head = 'Conflit · ' + x.heure; extra = '<span class="small">'+esc(conf.join(' · '))+'</span>'; }
+  else if (x.visite){ cls += ' done'; }
+  const tags = (x.visite ? '<span class="tag '+(x.visite.statut==='fait'?'t-ok':'t-warn')+'">'+(x.visite.statut==='fait'?'Réalisé '+x.visite.heure:'Non réalisé')+'</span> ' : '') +
+    (x.p.prefs.genre==='F' ? '<span class="tag t-info">Soignante uniquement</span> ' : '') + (x.p.alertes||[]).slice(0,1).map(a => '<span class="tag t-grey">'+esc(a)+'</span>').join('');
+  return '<button class="'+cls+'" data-act="editPassage" data-k="'+esc(x.key)+'"><span class="h">'+esc(head)+'</span><strong>'+esc(x.p.nom)+'</strong><span class="small muted">'+esc(x.pl.soins)+'</span>'+extra+(tags?'<span class="row" style="gap:4px">'+tags+'</span>':'')+'</button>';
+}
+function dlgEditPassage(key){
+  const list = passagesFor(key.split('|')[0]); const x = list.find(y => y.key===key); if (!x) return;
+  const conf = conflictsOf(list)[key];
+  openDlg('Passage chez '+x.p.nom,
+    '<div class="muted small">'+esc(longDate(x.date))+' · '+esc(x.pl.soins)+'</div>' +
+    (conf ? '<div class="banner conf">'+esc(conf.join(' · '))+'</div>' : '') +
+    (x.suspendu ? '<div class="banner info">Patient suspendu : '+esc(x.suspendu.motif)+'</div>' : '') +
+    '<div class="form"><label class="f">Soignant<select id="eN"><option value="">Non assigné</option>'+S.nurses.map(n => '<option value="'+n.id+'"'+(n.id===x.nurseId?' selected':'')+'>'+esc(n.nom)+'</option>').join('')+'</select></label>' +
+    '<label class="f">Heure<input type="time" id="eH" value="'+x.heure+'"></label></div>' +
+    '<label class="f"><span><input type="checkbox" id="eAll"> Appliquer à tous les passages récurrents de ce soin</span></label>' +
+    (x.annule ? '' : '<label class="f">Motif si annulation<input id="eM" placeholder="Ex. demande de la famille"></label>'),
+    [['Fermer',null],[x.annule?'Rétablir le passage':'Annuler ce passage','annul'],['Enregistrer','save',true]],
+    act => {
+      if (act==='save'){
+        const nId = document.getElementById('eN').value || null, h = document.getElementById('eH').value || x.heure;
+        commit(s => {
+          if (document.getElementById('eAll').checked){ const pl = patient(x.p.id).plans.find(q => q.id===x.pl.id); pl.nurseId = nId; pl.heure = h; delete s.overrides[key]; }
+          else s.overrides[key] = Object.assign({}, s.overrides[key], {nurseId:nId, heure:h});
+        }, 'Passage enregistré');
+      }
+      if (act==='annul'){
+        if (x.annule) commit(s => { delete s.overrides[key].annule; }, 'Passage rétabli');
+        else { const m = (document.getElementById('eM')||{}).value || 'Annulé par la coordination'; commit(s => { s.overrides[key] = Object.assign({}, s.overrides[key], {annule:true, motif:m}); }, 'Passage annulé'); }
+      }
+    });
+}
+
+/* ---------- vue : demandes ---------- */
+const TYPES = {nouvelle:['Nouvelle prise en charge','t-ok'], hospitalisation:['Hospitalisation','t-bad'], reprise:['Reprise','t-info'], annulation:['Annulation ponctuelle','t-warn']};
+const STATUTS = {recue:'Reçue', proposee:'Créneau proposé', planifiee:'Traitée', refusee:'Refusée'};
+function ago(t){ const m = Math.round((Date.now()-t)/60000); return m<1?'à l\u2019instant':m<60?'il y a '+m+' min':m<1440?'il y a '+Math.round(m/60)+' h':'il y a '+Math.round(m/1440)+' j'; }
+function dTitle(d){ return d.type==='nouvelle' ? d.patientNom : ((patient(d.patientId)||{}).nom || 'Patient inconnu'); }
+function dSummary(d){
+  if (d.type==='nouvelle') return d.soins+' · '+d.jours.map(j=>JOURS[j]).join(' ')+' · dès le '+shortDate(d.debut)+(d.heure?' vers '+d.heure:'');
+  if (d.type==='hospitalisation') return 'Du '+shortDate(d.du)+(d.au?' au '+shortDate(d.au):' (retour inconnu)');
+  if (d.type==='reprise') return 'Reprise le '+shortDate(d.date)+(d.motif?' · '+d.motif:'');
+  return 'Le '+shortDate(d.date)+(d.motif?' · '+d.motif:'');
+}
+function vDemandes(){
+  const f = ui.demandeFiltre;
+  const filt = d => f==='atraiter' ? (d.statut==='recue'||d.statut==='proposee') : f==='traitees' ? d.statut==='planifiee' : d.statut==='refusee';
+  const ds = S.demandes.filter(filt).sort((a,b) => b.creeLe - a.creeLe);
+  if (!ds.find(d => d.id===ui.demandeSel)) ui.demandeSel = ds[0] ? ds[0].id : null;
+  const chips = [['atraiter','À traiter · '+pendingDemandes().length],['traitees','Traitées'],['refusees','Refusées']].map(([k,l]) => '<button class="chip" data-act="dfilt" data-v="'+k+'" aria-pressed="'+(f===k)+'">'+l+'</button>').join('');
+  const items = ds.map(d => '<button class="item" data-act="dsel" data-v="'+d.id+'" aria-current="'+(d.id===ui.demandeSel)+'"><span class="row" style="justify-content:space-between"><span class="tag '+TYPES[d.type][1]+'">'+TYPES[d.type][0]+'</span><span class="small muted">'+ago(d.creeLe)+' · '+esc(d.source)+'</span></span><strong>'+esc(dTitle(d))+'</strong><span class="small muted">'+esc(dSummary(d))+'</span>'+(d.statut==='proposee'?'<span class="tag t-info" style="align-self:flex-start">Créneau proposé, en attente de confirmation</span>':'')+'</button>').join('');
+  return '<div class="top"><div><div class="kicker">Boîte de réception</div><h1>Demandes</h1></div><div class="row"><button class="btn" data-act="newDemande">+ Saisir une demande</button><button class="btn primary" data-act="waPaste">Coller un message WhatsApp</button></div></div>' +
+    '<div class="row">'+chips+'</div>' +
+    '<div class="split"><div class="a card list">'+(items || '<div class="empty">Aucune demande dans cette liste.</div>')+'</div>' +
+    '<div class="b">'+(ui.demandeSel ? demandeDetail(S.demandes.find(d=>d.id===ui.demandeSel)) : '')+'</div></div>';
+}
+function suggestNurses(d){
+  const dates = [0,1,2,3,4,5,6].map(i => addDays(d.debut,i)).filter(x => d.jours.includes(parseIso(x).getDay()));
+  return S.nurses.filter(n => !(d.genre==='F' && /soignante/i.test(d.prefs||'') && n.genre==='M')).map(n => {
+    let load = 0, clash = false;
+    for (const dt of dates){ const l = passagesFor(dt).filter(x => x.nurseId===n.id && !x.suspendu && !x.annule); load += l.length;
+      if (d.heure) clash = clash || l.some(x => toMin(x.heure) < toMin(d.heure)+30 && toMin(d.heure) < toMin(x.heure)+x.duree); }
+    return {n, load, clash};
+  }).sort((a,b) => (a.clash-b.clash) || (a.load-b.load));
+}
+function demandeDetail(d){
+  if (!d) return '';
+  const hist = (d.historique||[]).slice().reverse().map(h => '<div class="small muted">'+new Date(h.t).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' · '+esc(h.txt)+'</div>').join('');
+  let body = '', actions = '';
+  if (d.type==='nouvelle'){
+    body = '<dl class="kv"><div><dt>Soins</dt><dd>'+esc(d.soins)+'</dd></div><div><dt>Jours</dt><dd>'+d.jours.map(j=>JOURS[j]).join(' ')+'</dd></div><div><dt>Début souhaité</dt><dd>'+shortDate(d.debut)+'</dd></div><div><dt>Créneau préféré</dt><dd>'+esc(d.heure||'Indifférent')+'</dd></div><div><dt>Adresse</dt><dd>'+esc(d.adresse)+'</dd></div><div><dt>Contact</dt><dd>'+esc(d.contact||'—')+'</dd></div>'+(d.prefs?'<div style="grid-column:1/-1"><dt>Préférences</dt><dd>'+esc(d.prefs)+'</dd></div>':'')+'</dl>';
+    if (d.statut==='recue'){
+      const sug = suggestNurses(d);
+      actions = '<div class="card pad" style="background:var(--bg);display:flex;flex-direction:column;gap:10px"><strong>Proposer un créneau</strong>' +
+        '<div class="form"><label class="f">Soignant<select id="pN">'+sug.map(s => '<option value="'+s.n.id+'">'+esc(s.n.nom)+' · '+s.load+' passages sur la période'+(s.clash?' · occupé à cette heure':'')+'</option>').join('')+'</select></label>' +
+        '<label class="f">Heure<input type="time" id="pH" value="'+(d.heure||'09:00')+'"></label></div>' +
+        '<div class="row"><button class="btn primary" data-act="propose" data-v="'+d.id+'">Proposer ce créneau</button><button class="btn" data-act="refuse" data-v="'+d.id+'">Refuser…</button></div></div>';
+    } else if (d.statut==='proposee'){
+      actions = '<div class="banner info">Proposé : '+esc((nurse(d.proposition.nurseId)||{}).nom||'')+' à '+esc(d.proposition.heure)+'</div>' +
+        '<div class="row"><button class="btn primary" data-act="confirm" data-v="'+d.id+'">Confirmer (le partenaire a accepté)</button><button class="btn" data-act="reopen" data-v="'+d.id+'">Proposer autre chose</button><button class="btn" data-act="refuse" data-v="'+d.id+'">Refuser…</button></div>';
+    }
+  } else {
+    const p = patient(d.patientId);
+    body = '<dl class="kv"><div><dt>Patient</dt><dd>'+esc(p?p.nom:'?')+'</dd></div><div><dt>Détail</dt><dd>'+esc(dSummary(d))+'</dd></div></dl>';
+    if (d.statut==='recue'){
+      const lab = d.type==='hospitalisation' ? 'Suspendre les passages' : d.type==='reprise' ? 'Reprendre les passages' : 'Annuler les passages de ce jour';
+      actions = '<div class="row"><button class="btn primary" data-act="apply" data-v="'+d.id+'">'+lab+'</button><button class="btn" data-act="refuse" data-v="'+d.id+'">Refuser…</button></div>';
+    }
+  }
+  if (d.message) body += '<details><summary class="small" style="cursor:pointer;font-weight:600">Message WhatsApp d\u2019origine</summary><div class="small" style="white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:10px;margin-top:6px">'+esc(d.message)+'</div></details>';
+  if (d.statut==='refusee') actions = '<div class="banner conf">Refusée : '+esc(d.motifRefus||'')+'</div>';
+  if (d.statut==='planifiee') actions = '<div class="banner info">Demande traitée.</div>';
+  return '<div class="card pad" style="display:flex;flex-direction:column;gap:14px"><div class="row" style="justify-content:space-between"><span class="tag '+TYPES[d.type][1]+'">'+TYPES[d.type][0]+'</span><span class="small muted">Statut : '+STATUTS[d.statut]+'</span></div><h2 style="font-size:20px">'+esc(dTitle(d))+'</h2>'+body+actions+'<div style="border-top:1px solid var(--line2);padding-top:10px;display:flex;flex-direction:column;gap:4px"><strong class="small">Historique</strong>'+hist+'</div></div>';
+}
+function demandeAction(act, id){
+  const d = S.demandes.find(x => x.id===id); if (!d) return;
+  const h = txt => d.historique.push({t:Date.now(), txt: txt + ' (' + whoName() + ')'});
+  if (act==='propose'){
+    const nId = document.getElementById('pN').value, hr = document.getElementById('pH').value;
+    commit(() => { d.proposition = {nurseId:nId, heure:hr}; d.statut='proposee'; h('Créneau proposé : '+(nurse(nId)||{}).nom+' à '+hr); }, 'Créneau proposé au partenaire');
+  }
+  if (act==='reopen') commit(() => { d.statut='recue'; h('Nouvelle proposition demandée'); });
+  if (act==='confirm'){
+    commit(s => {
+      const p = {id:uid('p'),nom:d.patientNom,genre:d.genre||'F',age:null,adresse:d.adresse,acces:'',contact:d.contact,prefs:{genre:/soignante/i.test(d.prefs||'')?'F':null,exclus:[],avant:null},alertes:d.prefs?[d.prefs]:[],prescriptionJusqu:null,statut:'actif',
+        plans:[{id:uid('pl'),soins:d.soins,jours:d.jours,heure:d.proposition.heure,duree:30,nurseId:d.proposition.nurseId,debut:d.debut,fin:null}],absences:[],transmissions:[]};
+      s.patients.push(p); d.patientId = p.id; d.statut='planifiee'; h('Confirmée et planifiée');
+    }, 'Patient créé et passages planifiés');
+  }
+  if (act==='apply'){
+    commit(s => {
+      const p = patient(d.patientId);
+      if (d.type==='hospitalisation') p.absences.push({du:d.du, au:d.au||null, motif:'Hospitalisation'});
+      if (d.type==='reprise'){ const a = p.absences.find(x => !x.au || x.au >= d.date); if (a) a.au = addDays(d.date,-1); }
+      if (d.type==='annulation') for (const pl of p.plans) s.overrides[d.date+'|'+pl.id] = Object.assign({}, s.overrides[d.date+'|'+pl.id], {annule:true, motif:d.motif||'Annulation'});
+      d.statut='planifiee'; h('Appliquée au planning');
+    }, 'Planning mis à jour');
+  }
+  if (act==='refuse'){
+    openDlg('Refuser la demande', '<label class="f">Motif<select id="rM"><option>Zone trop éloignée de nos tournées</option><option>Contrainte horaire impossible</option><option>Le patient a choisi une autre équipe</option><option>Autre</option></select></label>',
+      [['Annuler',null],['Refuser la demande','ok',true]], a => { if (a==='ok'){ const m = document.getElementById('rM').value; commit(() => { d.statut='refusee'; d.motifRefus=m; h('Refusée : '+m); }, 'Demande refusée'); } });
+  }
+}
+function dlgNewDemande(pre){
+  pre = pre || {};
+  const pOpts = S.patients.map(p => '<option value="'+p.id+'">'+esc(p.nom)+'</option>').join('');
+  openDlg('Nouvelle demande',
+    '<label class="f">Type<select id="nT"><option value="nouvelle">Nouvelle prise en charge</option><option value="hospitalisation">Hospitalisation</option><option value="reprise">Reprise</option><option value="annulation">Annulation ponctuelle</option></select></label>' +
+    '<div id="nNew" class="form"><label class="f full">Patient (nom et prénom)<input id="nNom" placeholder="Ex. Mme Dupont J."></label>' +
+    '<label class="f">Genre<select id="nG"><option value="F">Femme</option><option value="M">Homme</option></select></label>' +
+    '<label class="f">Contact<input id="nC" placeholder="Ex. Fille"></label>' +
+    '<label class="f full">Adresse<input id="nA" placeholder="Rue, n°, code postal, commune"></label>' +
+    '<label class="f full">Soins<input id="nS" placeholder="Ex. Toilette, pilulier"></label>' +
+    '<fieldset class="full" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:600;margin-bottom:6px">Jours</legend><div class="row">'+[1,2,3,4,5,6,0].map(j => '<label class="chip"><input type="checkbox" class="nJ" value="'+j+'"> '+JOURS[j]+'</label>').join('')+'</div></fieldset>' +
+    '<label class="f">À partir du<input type="date" id="nD" value="'+addDays(today(),1)+'"></label>' +
+    '<label class="f">Heure souhaitée<input type="time" id="nH" value="09:00"></label>' +
+    '<label class="f full">Préférences<input id="nP" placeholder="Ex. soignante uniquement, avant 10 h"></label></div>' +
+    '<div id="nOld" class="form" hidden><label class="f full">Patient<select id="nPat">'+pOpts+'</select></label>' +
+    '<label class="f"><span id="nL1">Date</span><input type="date" id="nD1" value="'+today()+'"></label>' +
+    '<label class="f" id="nAuW">Retour prévu le<input type="date" id="nD2"></label>' +
+    '<label class="f full">Motif ou précision<input id="nM"></label></div>' +
+    '<label class="f">Source<select id="nSrc"><option>Centre de coordination</option><option>Famille</option><option>Patient</option><option>Hôpital</option><option>Médecin</option></select></label>' +
+    (pre.message ? '<div class="banner info small">Champs pré-remplis à partir du message WhatsApp : vérifiez-les avant d\u2019enregistrer.</div>' : ''),
+    [['Annuler',null],['Enregistrer la demande','ok',true]],
+    a => {
+      if (a!=='ok') return;
+      const v = id => (document.getElementById(id)||{}).value || '';
+      const t = v('nT'); const base = {id:uid('d'),type:t,statut:'recue',source:v('nSrc'),creeLe:Date.now(),message:pre.message||'',historique:[{t:Date.now(),txt:(pre.message?'Demande créée depuis un message WhatsApp par ':'Demande enregistrée par ')+whoName()}]};
+      if (t==='nouvelle'){
+        const jours = [...document.querySelectorAll('.nJ:checked')].map(c => Number(c.value));
+        if (!v('nNom') || !v('nS') || !jours.length){ toast('Indiquez le patient, les soins et au moins un jour'); return false; }
+        Object.assign(base,{patientNom:v('nNom'),genre:v('nG'),contact:v('nC'),adresse:v('nA'),soins:v('nS'),jours,debut:v('nD'),heure:v('nH'),prefs:v('nP')});
+      } else {
+        Object.assign(base,{patientId:v('nPat'),motif:v('nM')});
+        if (t==='hospitalisation'){ base.du = v('nD1'); base.au = v('nD2') || null; } else base.date = v('nD1');
+      }
+      commit(s => s.demandes.push(base), 'Demande enregistrée');
+      ui.demandeSel = base.id; ui.demandeFiltre='atraiter'; location.hash = '#demandes';
+    });
+  const sync = () => { const t = document.getElementById('nT').value; document.getElementById('nNew').hidden = t!=='nouvelle'; document.getElementById('nOld').hidden = t==='nouvelle';
+    document.getElementById('nAuW').hidden = t!=='hospitalisation'; document.getElementById('nL1').textContent = t==='hospitalisation'?'Hospitalisé depuis le':t==='reprise'?'Reprise le':'Date du passage annulé'; };
+  const setv = (id,val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null && val !== '') el.value = val; };
+  setv('nT', pre.type); setv('nNom', pre.patientNom); setv('nG', pre.genre); setv('nC', pre.contact); setv('nA', pre.adresse); setv('nS', pre.soins);
+  setv('nD', pre.debut); setv('nH', pre.heure); setv('nP', pre.prefs); setv('nM', pre.motif); setv('nSrc', pre.source);
+  if (Array.isArray(pre.jours)) document.querySelectorAll('.nJ').forEach(c => { c.checked = pre.jours.includes(Number(c.value)); });
+  if (pre.patientId) setv('nPat', pre.patientId);
+  if (pre.type==='hospitalisation'){ setv('nD1', pre.du); setv('nD2', pre.au); } else setv('nD1', pre.date);
+  document.getElementById('nT').onchange = sync; sync();
+}
+function dlgWhatsApp(){
+  openDlg('Coller un message WhatsApp',
+    '<p class="small muted" style="margin:0">Dans WhatsApp, appuyez longuement sur le message, choisissez « Copier », puis collez-le ici. Les informations sont repérées automatiquement et vous les vérifiez avant d\u2019enregistrer.</p>' +
+    '<label class="f">Message<textarea id="waT" rows="8" placeholder="Ex. Bonjour, nouvelle demande pour Mme D., toilette + pilulier lundi, mardi, jeudi et vendredi à partir du 12/10 vers 12h…"></textarea></label>' +
+    '<div id="waS" class="small muted" role="status"></div>',
+    [['Annuler',null],['Analyser le message','ok',true]],
+    a => {
+      if (a!=='ok') return;
+      const txt = document.getElementById('waT').value.trim();
+      if (!txt){ toast('Collez d\u2019abord un message'); return false; }
+      if (!sampler){ document.getElementById('dlg').close(); dlgNewDemande({message:txt}); toast('Analyse automatique indisponible ici : complétez le formulaire'); return false; }
+      const btn = document.querySelector('#dlg .dlg-f .primary'); btn.disabled = true; btn.textContent = 'Analyse en cours…';
+      document.getElementById('waS').textContent = 'Lecture du message…';
+      parseWhatsApp(txt).then(pre => { document.getElementById('dlg').close(); dlgNewDemande(pre); })
+        .catch(e => { document.getElementById('dlg').close(); dlgNewDemande({message:txt}); toast(e && e.code==='not_granted' ? 'Analyse refusée : complétez le formulaire' : 'Analyse impossible : complétez le formulaire'); });
+      return false;
+    });
+}
+async function parseWhatsApp(txt){
+  const pts = S.patients.map(p => ({id:p.id, nom:p.nom}));
+  const prompt = 'Tu aides une coordinatrice de soins infirmiers à domicile en Belgique. Voici un message WhatsApp reçu d\u2019un partenaire. Extrais-en une demande structurée.\n' +
+    'Date du jour : ' + today() + ' (' + longDate(today()) + '). Convertis les dates relatives (demain, lundi prochain, 12/10) en AAAA-MM-JJ.\n' +
+    'Patients déjà suivis (id et nom) : ' + JSON.stringify(pts) + '\n' +
+    'Types possibles : "nouvelle" (nouvelle prise en charge ou nouveaux soins), "hospitalisation" (patient hospitalisé, passages à suspendre), "reprise" (retour à domicile, reprise des passages), "annulation" (pas de passage un jour donné).\n' +
+    'Réponds UNIQUEMENT avec un objet JSON, sans texte autour, avec ces clés (null si inconnu) :\n' +
+    '{"type":string,"patientNom":string|null,"patientId":string|null (id d\u2019un patient déjà suivi si le message le concerne),"genre":"F"|"M"|null (Mme = F, M. = M),"adresse":string|null,"contact":string|null (personne et téléphone),"soins":string|null (ex. "Toilette, pilulier"),"jours":number[]|null (0=dimanche … 6=samedi; tous les jours = [0,1,2,3,4,5,6]),"debut":string|null,"heure":string|null (HH:MM),"prefs":string|null (préférences : soignante uniquement, avant 10 h…),"date":string|null (date de l\u2019annulation ou de la reprise),"du":string|null,"au":string|null (dates d\u2019hospitalisation),"motif":string|null,"source":"Centre de coordination"|"Famille"|"Patient"|"Hôpital"|"Médecin"|null}\n\nMessage :\n<<<\n' + txt + '\n>>>';
+  const r = await sampler.json(prompt, {modelTier:'quick'});
+  const pre = (r && typeof r === 'object') ? r : {};
+  const out = {message: txt};
+  ['type','patientNom','genre','adresse','contact','soins','debut','heure','prefs','date','du','au','motif','source'].forEach(k => { if (typeof pre[k] === 'string' && pre[k]) out[k] = pre[k]; });
+  if (!['nouvelle','hospitalisation','reprise','annulation'].includes(out.type)) out.type = 'nouvelle';
+  if (Array.isArray(pre.jours)) out.jours = pre.jours.map(Number).filter(n => n>=0 && n<=6);
+  if (typeof pre.patientId === 'string' && patient(pre.patientId)) out.patientId = pre.patientId;
+  else if (out.patientNom){ const key = out.patientNom.toLowerCase().replace(/^(mme|m|mr|madame|monsieur)\.?\s+/,'').split(' ')[0].replace(/\W/g,''); const m = key && S.patients.find(p => p.nom.toLowerCase().replace(/\W/g,'').includes(key)); if (m) out.patientId = m.id; }
+  return out;
+}
+
+/* ---------- vue : patients ---------- */
+function vPatients(){
+  const q = ui.patientQ.toLowerCase();
+  const t = today();
+  const ps = S.patients.filter(p => !q || (p.nom+' '+p.adresse).toLowerCase().includes(q)).sort((a,b) => a.nom.localeCompare(b.nom));
+  const rows = ps.map(p => {
+    const abs = absentOn(p,t);
+    const st = p.statut==='arrete' ? '<span class="tag t-grey">Prise en charge arrêtée</span>' : abs ? '<span class="tag t-info">'+esc(abs.motif)+'</span>' : '<span class="tag t-ok">Actif</span>';
+    const presc = !p.prescriptionJusqu ? '<span class="tag t-warn">À recevoir</span>' : (p.prescriptionJusqu < t ? '<span class="tag t-bad">Expirée</span>' : (p.prescriptionJusqu <= addDays(t,15) ? '<span class="tag t-warn">'+shortDate(p.prescriptionJusqu)+'</span>' : shortDate(p.prescriptionJusqu)));
+    const ref = [...new Set(p.plans.map(pl => (nurse(pl.nurseId)||{}).nom || 'Non assigné'))].join(', ');
+    const open = (p.transmissions||[]).filter(x => x.ouverte).length;
+    return '<tr class="click" data-act="openPatient" data-v="'+p.id+'" tabindex="0"><td><strong>'+esc(p.nom)+'</strong></td><td>'+esc(p.plans.map(pl=>pl.soins).join(' / '))+'</td><td>'+esc(ref)+'</td><td>'+presc+'</td><td>'+st+'</td><td>'+(open?'<span class="tag t-warn">'+open+' cible(s) ouverte(s)</span> ':'')+(p.alertes||[]).slice(0,1).map(a=>'<span class="tag t-grey">'+esc(a)+'</span>').join('')+'</td></tr>';
+  }).join('');
+  return '<div class="top"><div><div class="kicker">'+S.patients.length+' patients</div><h1>Patients</h1></div><button class="btn primary" data-act="newPatient">+ Nouveau patient</button></div>' +
+    '<label class="f" style="max-width:420px"><span class="muted" style="font-weight:500">Rechercher</span><input id="pQ" value="'+esc(ui.patientQ)+'" placeholder="Nom ou adresse"></label>' +
+    '<div class="card scroll"><table><thead><tr><th>Patient</th><th>Soins</th><th>Référent(s)</th><th>Prescription jusqu\u2019au</th><th>Statut</th><th>Alertes</th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" class="empty">Aucun patient trouvé.</td></tr>')+'</tbody></table></div>';
+}
+const CIBLES = ['Douleur','Peau / plaie','Chute','Alimentation','Élimination','Comportement','Médication','Autre'];
+function vPatient(id){
+  const p = patient(id); if (!p) return '<div class="empty">Patient introuvable.</div>';
+  const t = today();
+  const trs = (p.transmissions||[]).filter(x => ui.trFiltre==='toutes' || (ui.trFiltre==='ouvertes' ? x.ouverte : x.cible===ui.trFiltre)).slice().sort((a,b)=>b.t-a.t);
+  const visits = Object.entries(S.visites).filter(([k]) => p.plans.some(pl => k.endsWith('|'+pl.id))).map(([k,v]) => ({date:k.split('|')[0], pl:p.plans.find(pl=>k.endsWith('|'+pl.id)), v})).sort((a,b) => (b.date+b.v.heure).localeCompare(a.date+a.v.heure));
+  const pOk = p.prescriptionJusqu && p.prescriptionJusqu >= t;
+  const ck = (ok, txt) => '<div class="check"><span class="dot '+(ok?'ok':'no')+'">'+(ok?'✓':'!')+'</span><span>'+(ok?esc(txt):'<strong>'+esc(txt)+'</strong>')+'</span></div>';
+  const allSigned = visits.every(x => x.v.auteur);
+  const trFilt = ['toutes','ouvertes',...CIBLES.slice(0,4)].map(c => '<button class="chip" data-act="trf" data-v="'+esc(c)+'" aria-pressed="'+(ui.trFiltre===c)+'">'+(c==='toutes'?'Toutes':c==='ouvertes'?'Cibles ouvertes':esc(c))+'</button>').join('');
+  return '<div class="top"><div><a href="#patients" class="small">‹ Patients</a><div class="kicker" style="margin-top:6px">Dossier infirmier</div><h1>'+esc(p.nom)+'</h1><div class="muted small">'+(p.age?p.age+' ans · ':'')+esc(p.adresse)+'</div></div>' +
+    (p.statut==='arrete' ? '<div class="banner info">Prise en charge arrêtée : ce patient n\u2019apparaît plus dans le planning.</div>' : '') + '<div class="row"><button class="btn" data-act="editPatient" data-v="'+p.id+'">Modifier la fiche</button><button class="btn" data-act="absence" data-v="'+p.id+'">Signaler une absence</button><button class="btn primary" data-act="newTr" data-v="'+p.id+'">+ Transmission ciblée</button></div></div>' +
+    ((p.alertes||[]).length ? '<div class="banner conf">'+p.alertes.map(esc).join(' · ')+'</div>' : '') +
+    '<div class="split"><div class="a" style="display:flex;flex-direction:column;gap:12px">' +
+      '<div class="row">'+trFilt+'</div>' +
+      (trs.length ? trs.map(x => '<div class="tr card"><div class="row" style="justify-content:space-between"><span class="row" style="gap:6px"><span class="tag t-info">Cible : '+esc(x.cible)+'</span><span class="tag '+(x.ouverte?'t-warn':'t-grey')+'">'+(x.ouverte?'Ouverte':'Clôturée')+'</span></span><span class="small muted">'+new Date(x.t).toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' · '+esc(x.auteur)+'</span></div>' +
+        '<div class="small"><b class="l">D</b> '+esc(x.d)+'<br><b class="l">A</b> '+esc(x.a)+'<br><b class="l">R</b> '+esc(x.r)+'</div>' +
+        (x.ouverte ? '<div><button class="btn small" data-act="closeTr" data-v="'+p.id+'|'+x.id+'">Clôturer la cible</button></div>' : '')+'</div>').join('') : '<div class="card empty">Aucune transmission pour ce filtre. Ajoutez la première avec « + Transmission ciblée ».</div>') +
+      '<div class="card"><div class="pad" style="padding-bottom:4px"><h2>Journées de soins</h2></div><div class="scroll"><table><thead><tr><th>Date</th><th>Soins</th><th>Infirmier</th><th>Statut</th></tr></thead><tbody>' +
+      (visits.length ? visits.slice(0,20).map(x => '<tr><td>'+shortDate(x.date)+' '+esc(x.v.heure||'')+'</td><td>'+esc((x.v.actes||[]).join(', ')||x.pl.soins)+(x.v.note?'<div class="small muted">'+esc(x.v.note)+'</div>':'')+'</td><td>'+esc(x.v.auteur)+'</td><td>'+(x.v.statut==='fait'?'<span class="tag t-ok">Réalisé · signé</span>':'<span class="tag t-warn">Non réalisé : '+esc(x.v.motif)+'</span>')+'</td></tr>').join('') : '<tr><td colspan="4" class="muted">Aucun passage encore validé. Les passages validés dans « Ma tournée » apparaissent ici.</td></tr>') +
+      '</tbody></table></div></div>' +
+    '</div><div class="b" style="display:flex;flex-direction:column;gap:12px">' +
+      '<div class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2>Complétude du dossier</h2>' +
+        ck(pOk, pOk ? 'Prescription valide jusqu\u2019au '+shortDate(p.prescriptionJusqu) : (p.prescriptionJusqu ? 'Prescription expirée le '+shortDate(p.prescriptionJusqu) : 'Prescription à recevoir et transcrire')) +
+        ck(allSigned, 'Soins et infirmier identifiés pour chaque passage validé') +
+        ck(p.plans.length>0, 'Planification des soins définie') +
+        ck(!(p.transmissions||[]).some(x=>x.ouverte && Date.now()-x.t > 3*864e5), 'Aucune cible ouverte depuis plus de 3 jours') +
+      '</div>' +
+      '<div class="card pad"><h2 style="margin-bottom:10px">Fiche</h2><dl class="kv">' +
+        '<div style="grid-column:1/-1"><dt>Accès au domicile</dt><dd>'+esc(p.acces||'À compléter')+'</dd></div>' +
+        '<div><dt>Contact</dt><dd>'+esc(p.contact||'—')+'</dd></div>' +
+        '<div><dt>Soignant</dt><dd>'+(p.prefs.genre==='F'?'Soignante uniquement':'Indifférent')+'</dd></div>' +
+        '<div><dt>Soignants exclus</dt><dd>'+esc((p.prefs.exclus||[]).map(i=>(nurse(i)||{}).nom).join(', ')||'Aucun')+'</dd></div>' +
+        '<div><dt>Heure limite</dt><dd>'+esc(p.prefs.avant?'Avant '+p.prefs.avant:'Aucune')+'</dd></div>' +
+      '</dl></div>' +
+      '<div class="card pad"><div class="row" style="justify-content:space-between;margin-bottom:8px"><h2>Plan de soins</h2><button class="btn small" data-act="plan" data-v="'+p.id+'|">+ Ajouter un soin</button></div>'+(p.plans.length ? p.plans.map(pl => '<div class="small row" style="padding:8px 0;border-top:1px solid var(--line2);justify-content:space-between;flex-wrap:nowrap"><span><strong>'+esc(pl.soins)+'</strong><br>'+pl.jours.slice().sort((a,b)=>((a+6)%7)-((b+6)%7)).map(j=>JOURS[j]).join(' ')+' · '+pl.heure+' · '+esc((nurse(pl.nurseId)||{}).nom||'Non assigné')+(pl.fin?' · jusqu\u2019au '+shortDate(pl.fin):'')+'</span><button class="btn small" data-act="plan" data-v="'+p.id+'|'+pl.id+'">Modifier</button></div>').join('') : '<div class="small muted">Aucun soin planifié. Ajoutez-en un pour qu\u2019il apparaisse dans le planning.</div>')+'</div>' +
+      '<div class="card pad row"><button class="btn small" data-act="togglePatient" data-v="'+p.id+'">'+(p.statut==='arrete'?'Reprendre la prise en charge':'Arrêter la prise en charge')+'</button><button class="btn small" data-act="deletePatient" data-v="'+p.id+'">Supprimer le patient</button></div>' +
+      ((p.absences||[]).length ? '<div class="card pad"><h2 style="margin-bottom:8px">Absences</h2>'+p.absences.map(a => '<div class="small">'+esc(a.motif)+' · du '+shortDate(a.du)+(a.au?' au '+shortDate(a.au):' (retour inconnu)')+'</div>').join('')+'</div>' : '') +
+    '</div></div>';
+}
+function dlgTransmission(pid){
+  const p = patient(pid);
+  openDlg('Transmission ciblée · '+p.nom,
+    '<div class="muted small">'+esc(whoName())+' · '+new Date().toLocaleString('fr-BE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'</div>' +
+    '<label class="f">Cible<select id="tC">'+CIBLES.map(c=>'<option>'+c+'</option>').join('')+'</select></label>' +
+    '<label class="f">D · Données (observations)<textarea id="tD" rows="2" placeholder="Ex. EVA 6/10 au lever"></textarea></label>' +
+    '<label class="f">A · Actions réalisées<textarea id="tA" rows="2" placeholder="Ex. antalgie selon protocole"></textarea></label>' +
+    '<label class="f">R · Résultats<textarea id="tR" rows="2" placeholder="Ex. EVA 3/10 à 09:20"></textarea></label>' +
+    '<label class="small"><input type="checkbox" id="tO" checked> Garder la cible ouverte (suivi au prochain passage)</label>',
+    [['Annuler',null],['Signer et enregistrer','ok',true]],
+    a => { if (a!=='ok') return;
+      const v = id => document.getElementById(id).value.trim();
+      if (!v('tD')){ toast('Les données (D) sont obligatoires'); return false; }
+      commit(() => { p.transmissions = p.transmissions || []; p.transmissions.push({id:uid('t'),t:Date.now(),auteur:whoName(),cible:v('tC'),d:v('tD'),a:v('tA'),r:v('tR'),ouverte:document.getElementById('tO').checked}); }, 'Transmission signée');
+    });
+}
+function dlgEditPatient(pid){
+  const p = patient(pid);
+  openDlg('Modifier la fiche · '+p.nom,
+    '<div class="form"><label class="f full">Accès au domicile<input id="fA" value="'+esc(p.acces)+'"></label>' +
+    '<label class="f">Contact<input id="fC" value="'+esc(p.contact)+'"></label>' +
+    '<label class="f">Prescription valide jusqu\u2019au<input type="date" id="fP" value="'+esc(p.prescriptionJusqu||'')+'"></label>' +
+    '<label class="f">Soignant<select id="fG"><option value="">Indifférent</option><option value="F"'+(p.prefs.genre==='F'?' selected':'')+'>Soignante uniquement</option></select></label>' +
+    '<label class="f">Heure limite<input type="time" id="fH" value="'+esc(p.prefs.avant||'')+'"></label>' +
+    '<fieldset class="full" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:600;margin-bottom:6px">Soignants exclus par le patient</legend><div class="row">'+S.nurses.map(n=>'<label class="chip"><input type="checkbox" class="fX" value="'+n.id+'"'+((p.prefs.exclus||[]).includes(n.id)?' checked':'')+'> '+esc(n.nom)+'</label>').join('')+'</div></fieldset>' +
+    '<label class="f full">Alertes (séparées par ;)<input id="fL" value="'+esc((p.alertes||[]).join('; '))+'"></label></div>',
+    [['Annuler',null],['Enregistrer','ok',true]],
+    a => { if (a!=='ok') return; const v = id => document.getElementById(id).value;
+      commit(() => { p.acces=v('fA'); p.contact=v('fC'); p.prescriptionJusqu=v('fP')||null; p.prefs.genre=v('fG')||null; p.prefs.avant=v('fH')||null;
+        p.prefs.exclus=[...document.querySelectorAll('.fX:checked')].map(c=>c.value); p.alertes=v('fL').split(';').map(s=>s.trim()).filter(Boolean); }, 'Fiche enregistrée'); });
+}
+function dlgAbsence(pid){
+  const p = patient(pid);
+  openDlg('Signaler une absence · '+p.nom,
+    '<div class="form"><label class="f">Motif<select id="aM"><option>Hospitalisation</option><option>Vacances</option><option>Séjour de revalidation</option><option>Autre</option></select></label>' +
+    '<label class="f">Du<input type="date" id="aD" value="'+today()+'"></label><label class="f">Au (inclus, facultatif)<input type="date" id="aA"></label></div>' +
+    '<p class="small muted">Les passages de la période sont suspendus et reprennent automatiquement le lendemain de la date de fin.</p>',
+    [['Annuler',null],['Suspendre les passages','ok',true]],
+    a => { if (a!=='ok') return; const v = id => document.getElementById(id).value;
+      commit(() => p.absences.push({du:v('aD'),au:v('aA')||null,motif:v('aM')}), 'Passages suspendus'); });
+}
+
+function dlgNewPatient(){
+  openDlg('Nouveau patient',
+    '<div class="form"><label class="f full">Nom (initiales ou code conseillé)<input id="xN" placeholder="Ex. Mme D. J. ou DUP-J"></label>' +
+    '<label class="f">Genre<select id="xG"><option value="F">Femme</option><option value="M">Homme</option></select></label>' +
+    '<label class="f">Contact<input id="xC" placeholder="Ex. Fille"></label>' +
+    '<label class="f full">Adresse<input id="xA"></label>' +
+    '<label class="f full">Accès au domicile<input id="xX" placeholder="Code, clé, étage…"></label>' +
+    '<label class="f">Prescription valide jusqu\u2019au<input type="date" id="xP"></label></div>',
+    [['Annuler',null],['Créer le patient','ok',true]],
+    a => { if (a!=='ok') return; const v = id => document.getElementById(id).value.trim();
+      if (!v('xN')){ toast('Indiquez un nom ou un code'); return false; }
+      const p = {id:uid('p'),nom:v('xN'),genre:v('xG'),age:null,adresse:v('xA'),acces:v('xX'),contact:v('xC'),prefs:{genre:null,exclus:[],avant:null},alertes:[],prescriptionJusqu:v('xP')||null,statut:'actif',plans:[],absences:[],transmissions:[]};
+      commit(s => s.patients.push(p), 'Patient créé : ajoutez maintenant ses soins');
+      location.hash = '#patient/'+p.id; });
+}
+function dlgPlan(pid, plId){
+  const p = patient(pid); const pl = plId ? p.plans.find(x => x.id===plId) : null;
+  const cur = pl || {soins:'',jours:[1,2,3,4,5],heure:'08:00',duree:30,nurseId:null,debut:today(),fin:null};
+  openDlg((pl?'Modifier le soin':'Ajouter un soin')+' · '+p.nom,
+    '<div class="form"><label class="f full">Soins<input id="yS" value="'+esc(cur.soins)+'" placeholder="Ex. Toilette, pilulier"></label>' +
+    '<fieldset class="full" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:600;margin-bottom:6px">Jours</legend><div class="row">'+[1,2,3,4,5,6,0].map(j => '<label class="chip"><input type="checkbox" class="yJ" value="'+j+'"'+(cur.jours.includes(j)?' checked':'')+'> '+JOURS[j]+'</label>').join('')+'</div></fieldset>' +
+    '<label class="f">Heure<input type="time" id="yH" value="'+esc(cur.heure)+'"></label>' +
+    '<label class="f">Durée (minutes)<input type="number" id="yD" min="5" step="5" value="'+(cur.duree||30)+'"></label>' +
+    '<label class="f">Soignant<select id="yN"><option value="">Non assigné</option>'+S.nurses.map(n => '<option value="'+n.id+'"'+(n.id===cur.nurseId?' selected':'')+'>'+esc(n.nom)+'</option>').join('')+'</select></label>' +
+    '<label class="f">À partir du<input type="date" id="yB" value="'+esc(cur.debut||today())+'"></label>' +
+    '<label class="f">Jusqu\u2019au (facultatif)<input type="date" id="yF" value="'+esc(cur.fin||'')+'"></label></div>',
+    pl ? [['Annuler',null],['Supprimer ce soin','del'],['Enregistrer','ok',true]] : [['Annuler',null],['Ajouter le soin','ok',true]],
+    a => {
+      if (a==='del'){ commit(() => { p.plans = p.plans.filter(x => x.id!==plId); }, 'Soin supprimé'); return; }
+      if (a!=='ok') return;
+      const v = id => document.getElementById(id).value;
+      const jours = [...document.querySelectorAll('.yJ:checked')].map(c => Number(c.value));
+      if (!v('yS').trim() || !jours.length){ toast('Indiquez les soins et au moins un jour'); return false; }
+      const data = {soins:v('yS').trim(), jours, heure:v('yH')||'08:00', duree:Number(v('yD'))||30, nurseId:v('yN')||null, debut:v('yB')||today(), fin:v('yF')||null};
+      commit(() => { if (pl) Object.assign(pl, data); else p.plans.push(Object.assign({id:uid('pl')}, data)); }, pl ? 'Soin modifié' : 'Soin ajouté au planning');
+    });
+}
+
+/* ---------- vue : équipe et données ---------- */
+function vEquipe(){
+  const rows = S.nurses.map(n => '<tr><td><strong>'+esc(n.nom)+'</strong><div class="small muted">'+esc(n.statut||'')+'</div></td><td>'+(n.genre==='M'?'Homme':'Femme')+'</td><td>'+esc(n.competences||'—')+'</td><td><button class="btn small" data-act="nurse" data-v="'+n.id+'">Modifier</button></td></tr>').join('');
+  return '<div class="top"><div><div class="kicker">'+S.nurses.length+' soignant(s)</div><h1>Équipe et données</h1></div><button class="btn primary" data-act="nurse" data-v="">+ Ajouter un soignant</button></div>' +
+    '<div class="card scroll"><table><thead><tr><th>Soignant</th><th>Genre</th><th>Compétences</th><th></th></tr></thead><tbody>'+(rows || '<tr><td colspan="4" class="muted">Aucun soignant. Ajoutez votre équipe pour pouvoir planifier.</td></tr>')+'</tbody></table></div>' +
+    '<div class="card pad" style="display:flex;flex-direction:column;gap:12px"><h2>Sauvegarde et export</h2>' +
+      '<p class="small muted" style="margin:0">Faites une sauvegarde régulière et rangez le fichier dans Fichiers ou iCloud. Les exports CSV s\u2019ouvrent dans Excel ou Numbers.</p>' +
+      '<div class="row"><button class="btn" data-act="backup">Télécharger une sauvegarde</button><label class="btn" style="cursor:pointer">Restaurer une sauvegarde<input type="file" id="restoreIn" accept=".json,application/json" hidden></label></div>' +
+      '<div class="row"><button class="btn" data-act="csvPlanning">Exporter le planning des 7 prochains jours (CSV)</button><button class="btn" data-act="csvPatients">Exporter la liste des patients (CSV)</button></div>' +
+    '</div>' +
+    '<div class="card pad" style="display:flex;flex-direction:column;gap:12px"><h2>Recommencer</h2>' +
+      '<div class="row"><button class="btn warn" data-act="wipe">Vider toutes les données</button><button class="btn" data-act="reset">Recharger les données d\u2019exemple</button></div>' +
+    '</div>';
+}
+function dlgNurse(id){
+  const n = id ? nurse(id) : null; const cur = n || {nom:'',genre:'F',statut:'',competences:''};
+  openDlg(n ? 'Modifier le soignant' : 'Ajouter un soignant',
+    '<div class="form"><label class="f full">Nom<input id="zN" value="'+esc(cur.nom)+'" placeholder="Ex. Sophie M."></label>' +
+    '<label class="f">Genre<select id="zG"><option value="F"'+(cur.genre==='F'?' selected':'')+'>Femme</option><option value="M"'+(cur.genre==='M'?' selected':'')+'>Homme</option></select></label>' +
+    '<label class="f">Statut<input id="zS" value="'+esc(cur.statut)+'" placeholder="Ex. Indépendante"></label>' +
+    '<label class="f full">Compétences<input id="zC" value="'+esc(cur.competences)+'" placeholder="Ex. Palliatif, plaies"></label></div>',
+    n ? [['Annuler',null],['Retirer de l\u2019équipe','del'],['Enregistrer','ok',true]] : [['Annuler',null],['Ajouter','ok',true]],
+    a => {
+      if (a==='del'){ commit(s => { s.nurses = s.nurses.filter(x => x.id!==id); s.patients.forEach(p => { p.plans.forEach(pl => { if (pl.nurseId===id) pl.nurseId = null; }); p.prefs.exclus = (p.prefs.exclus||[]).filter(x => x!==id); }); Object.values(s.overrides).forEach(o => { if (o.nurseId===id) o.nurseId = null; }); }, 'Soignant retiré : ses passages sont à réassigner'); return; }
+      if (a!=='ok') return; const v = k => document.getElementById(k).value.trim();
+      if (!v('zN')){ toast('Indiquez un nom'); return false; }
+      commit(s => { if (n) Object.assign(n,{nom:v('zN'),genre:v('zG'),statut:v('zS'),competences:v('zC')}); else s.nurses.push({id:uid('n'),nom:v('zN'),genre:v('zG'),statut:v('zS'),competences:v('zC')}); }, n ? 'Soignant modifié' : 'Soignant ajouté');
+    });
+}
+async function offerFile(filename, data){
+  if (downloads){
+    try { await downloads.save({filename, data}); toast('Fichier enregistré'); return; }
+    catch(e){ if (e && e.code==='declined') return; }
+  }
+  openDlg('Copier les données', '<p class="small muted" style="margin:0">Le téléchargement n\u2019est pas disponible ici. Copiez le texte ci-dessous et collez-le dans une note ou un fichier.</p><textarea rows="10" style="width:100%;font-size:12px" readonly>'+esc(data)+'</textarea>', [['Fermer',null]], () => {});
+}
+const csvCell = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+function csvPlanning(){
+  const lines = [['Date','Heure','Tournée','Patient','Soins','Soignant','Statut'].map(csvCell).join(';')];
+  for (let i=0;i<7;i++){ const d = addDays(today(),i);
+    passagesFor(d).forEach(x => lines.push([shortDate(d)+'/'+d.slice(0,4), x.heure, x.tournee, x.p.nom, x.pl.soins, (nurse(x.nurseId)||{}).nom||'Non assigné', x.suspendu?'Suspendu ('+x.suspendu.motif+')':x.annule?'Annulé':x.visite?(x.visite.statut==='fait'?'Réalisé':'Non réalisé'):'Prévu'].map(csvCell).join(';'))); }
+  offerFile('planning-'+today()+'.csv', '\ufeff'+lines.join('\r\n'));
+}
+function csvPatients(){
+  const lines = [['Patient','Adresse','Accès','Contact','Soins','Prescription jusqu\u2019au','Préférences','Statut'].map(csvCell).join(';')];
+  S.patients.forEach(p => lines.push([p.nom,p.adresse,p.acces,p.contact,p.plans.map(pl => pl.soins+' ('+pl.jours.map(j=>JOURS[j]).join(' ')+' '+pl.heure+')').join(' / '),p.prescriptionJusqu||'',[p.prefs.genre==='F'?'Soignante uniquement':'',p.prefs.avant?'Avant '+p.prefs.avant:''].filter(Boolean).join(', '),p.statut==='arrete'?'Arrêté':'Actif'].map(csvCell).join(';')));
+  offerFile('patients-'+today()+'.csv', '\ufeff'+lines.join('\r\n'));
+}
+
+/* ---------- vue : ma tournée ---------- */
+function vTournee(){
+  if (who==='coord'){
+    return '<div class="top"><div><div class="kicker">Application infirmier</div><h1>Ma tournée</h1></div></div><div class="card pad" style="display:flex;flex-direction:column;gap:12px"><p style="margin:0">Choisissez l\u2019infirmier dont vous voulez voir la tournée.</p><div class="row">'+S.nurses.map(n=>'<button class="btn" data-act="asNurse" data-v="'+n.id+'">'+esc(n.nom)+'</button>').join('')+'</div></div>';
+  }
+  const n = nurse(who); const t = today();
+  const all = passagesFor(t); const conf = conflictsOf(all);
+  const mine = all.filter(x => x.nurseId===who && !x.suspendu && !x.annule);
+  const done = mine.filter(x => x.visite).length;
+  const next = mine.find(x => !x.visite);
+  const cards = mine.map(x => {
+    const isNext = next && x.key===next.key;
+    const st = x.visite ? (x.visite.statut==='fait' ? '<span class="tag t-ok">Réalisé à '+esc(x.visite.heure)+'</span>' : '<span class="tag t-warn">Non réalisé : '+esc(x.visite.motif)+'</span>') : '';
+    return '<div class="card visit'+(isNext?' next':'')+'">' +
+      '<div class="row" style="justify-content:space-between"><strong class="small" style="color:var(--accent-dark)">'+(isNext?'Prochain · ':'')+x.heure+'</strong>'+st+'</div>' +
+      '<div><strong style="font-size:17px">'+esc(x.p.nom)+'</strong><div class="small muted">'+esc(x.pl.soins)+'</div></div>' +
+      ((x.p.alertes||[]).length||conf[x.key] ? '<div class="row" style="gap:4px">'+(x.p.alertes||[]).map(a=>'<span class="tag t-bad">'+esc(a)+'</span>').join('')+(conf[x.key]?'<span class="tag t-warn">'+esc(conf[x.key].join(' · '))+'</span>':'')+'</div>' : '') +
+      '<div class="small"><strong>Accès :</strong> '+esc(x.p.acces||'—')+'<br><span class="muted">'+esc(x.p.adresse)+'</span></div>' +
+      (x.visite ? '' : '<div class="row"><a class="btn small" href="https://maps.google.com/?q='+encodeURIComponent(x.p.adresse)+'" target="_blank" rel="noopener">Itinéraire</a><button class="btn small" data-act="newTr" data-v="'+x.p.id+'">Transmission</button><button class="btn small warn" data-act="late" data-v="'+esc(x.key)+'">Retard</button></div>' +
+        '<div class="row"><button class="btn" style="flex:1" data-act="notDone" data-v="'+esc(x.key)+'">Non réalisé</button><button class="btn primary" style="flex:1" data-act="validate" data-v="'+esc(x.key)+'">Valider le passage</button></div>') +
+    '</div>';
+  }).join('');
+  return '<div class="top"><div><div class="kicker">'+esc(longDate(t))+'</div><h1>Tournée de '+esc(n.nom)+'</h1></div><div class="row"><span class="tag t-info" style="font-size:13px">'+done+' / '+mine.length+' passages faits</span><button class="btn small" data-act="asNurse" data-v="coord">Changer d\u2019infirmier</button></div></div>' +
+    '<div style="display:flex;flex-direction:column;gap:12px;max-width:640px">'+(cards || '<div class="card empty">Aucun passage prévu aujourd\u2019hui.</div>')+'</div>';
+}
+function findPassage(key){ return passagesFor(key.split('|')[0]).find(x => x.key===key); }
+function dlgValidate(key){
+  const x = findPassage(key); if (!x) return;
+  const actes = x.pl.soins.split(/,|\+/).map(s=>s.trim()).filter(Boolean);
+  openDlg('Valider le passage · '+x.p.nom,
+    '<div class="muted small">'+esc(whoName())+' · '+nowHM()+'</div><fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px"><legend class="small" style="font-weight:600;margin-bottom:6px">Soins réalisés</legend>' +
+    actes.map((a,i)=>'<label style="display:flex;gap:10px;align-items:center;min-height:44px"><input type="checkbox" class="vA" value="'+esc(a)+'" checked style="width:20px;height:20px"> '+esc(a)+'</label>').join('') +
+    '</fieldset><label class="f">Note (facultatif)<input id="vN" placeholder="Ex. patient fatigué ce matin"></label>' +
+    '<p class="small muted" style="margin:0">La validation est signée à votre nom et inscrite au dossier infirmier.</p>',
+    [['Annuler',null],['Signer et valider','ok',true]],
+    a => { if (a!=='ok') return;
+      const ac = [...document.querySelectorAll('.vA:checked')].map(c=>c.value);
+      if (!ac.length){ toast('Cochez au moins un soin réalisé'); return false; }
+      commit(s => { s.visites[key] = {statut:'fait', heure:nowHM(), auteur:whoName(), actes:ac, note:document.getElementById('vN').value}; }, 'Passage validé et signé'); });
+}
+function dlgNotDone(key){
+  const x = findPassage(key); if (!x) return;
+  openDlg('Passage non réalisé · '+x.p.nom,
+    '<label class="f">Motif<select id="nm"><option>Patient absent</option><option>Refus de soin</option><option>Adresse introuvable</option><option>Patient hospitalisé</option><option>Autre</option></select></label><label class="f">Précision<input id="np"></label>',
+    [['Annuler',null],['Enregistrer','ok',true]],
+    a => { if (a!=='ok') return; const m = document.getElementById('nm').value + (document.getElementById('np').value ? ' – '+document.getElementById('np').value : '');
+      commit(s => { s.visites[key] = {statut:'non', heure:nowHM(), auteur:whoName(), motif:m}; }, 'Motif enregistré, la coordination est informée'); });
+}
+
+/* ---------- vue : tableau de bord ---------- */
+function vTableau(){
+  const t = today(); const list = passagesFor(t); const conf = conflictsOf(list);
+  const act = list.filter(x=>!x.suspendu && !x.annule);
+  const faits = act.filter(x=>x.visite && x.visite.statut==='fait').length, non = act.filter(x=>x.visite && x.visite.statut==='non').length;
+  const ret = (S.retards||[]).filter(r=>r.date===t);
+  const exp = S.patients.filter(p=>p.prescriptionJusqu && p.prescriptionJusqu <= addDays(t,15)).sort((a,b)=>a.prescriptionJusqu.localeCompare(b.prescriptionJusqu));
+  const abs = S.patients.map(p => ({p, a: (p.absences||[]).find(a => !a.au || a.au >= t)})).filter(o => o.a);
+  const loads = S.nurses.map(n => ({n, c: act.filter(x=>x.nurseId===n.id).length})); const mx = Math.max(1,...loads.map(l=>l.c));
+  const kpi = (v,l,s) => '<div class="card pad kpi"><div class="small muted">'+l+'</div><div class="v">'+v+'</div><div class="small muted">'+s+'</div></div>';
+  return '<div class="top"><div><div class="kicker">'+esc(longDate(t))+'</div><h1>Tableau de bord</h1></div></div>' +
+    '<div class="kpis">'+kpi(pendingDemandes().length,'Demandes à traiter','<a href="#demandes">Ouvrir les demandes</a>')+kpi(faits+' / '+act.length,'Passages réalisés aujourd\u2019hui',non+' non réalisé(s)')+kpi(Object.keys(conf).length,'Conflits de planning','<a href="#planning">Voir le planning</a>')+kpi(ret.length,'Retards signalés','aujourd\u2019hui')+'</div>' +
+    '<div class="split"><div class="a card pad" style="display:flex;flex-direction:column;gap:8px"><h2>Prescriptions qui expirent (15 jours)</h2>' +
+      (exp.length ? exp.map(p=>'<div class="row small" style="justify-content:space-between;border-top:1px solid var(--line2);padding-top:8px"><a href="#patient/'+p.id+'">'+esc(p.nom)+'</a><span class="tag '+(p.prescriptionJusqu<t?'t-bad':'t-warn')+'">'+(p.prescriptionJusqu<t?'Expirée le ':'Jusqu\u2019au ')+shortDate(p.prescriptionJusqu)+'</span></div>').join('') : '<div class="muted small">Aucune.</div>') +
+    '</div><div class="b card pad" style="display:flex;flex-direction:column;gap:8px"><h2>Absences et reprises</h2>' +
+      (abs.length ? abs.map(o=>'<div class="row small" style="justify-content:space-between;border-top:1px solid var(--line2);padding-top:8px"><a href="#patient/'+o.p.id+'">'+esc(o.p.nom)+'</a><span class="tag t-info">'+esc(o.a.motif)+(o.a.au?' · reprise le '+shortDate(addDays(o.a.au,1)):' · retour inconnu')+'</span></div>').join('') : '<div class="muted small">Aucune.</div>') +
+    '</div></div>' +
+    '<div class="card pad" style="display:flex;flex-direction:column;gap:10px"><h2>Charge du jour par infirmier</h2>'+loads.map(l=>'<div class="row small" style="flex-wrap:nowrap"><span style="width:90px">'+esc(l.n.nom)+'</span><span class="bar"><i style="width:'+(l.c/mx*100)+'%"></i></span><span style="width:90px;text-align:right" class="muted">'+l.c+' passage(s)</span></div>').join('')+'</div>' +
+    (ret.length ? '<div class="card pad"><h2 style="margin-bottom:8px">Retards signalés</h2>'+ret.map(r=>'<div class="small">'+esc(r.h)+' · '+esc(r.nurse)+' en retard chez '+esc(r.patient)+'</div>').join('')+'</div>' : '') +
+    '';
+}
+
+/* ---------- dialogue générique ---------- */
+function openDlg(title, body, buttons, onAct){
+  const d = document.getElementById('dlg');
+  d.innerHTML = '<div class="dlg-h"><h2>'+esc(title)+'</h2><button class="btn small" data-x aria-label="Fermer">✕</button></div><div class="dlg-b">'+body+'</div><div class="dlg-f">'+
+    buttons.map(([l,a,pri],i) => '<button class="btn'+(pri?' primary':'')+'" data-i="'+i+'">'+esc(l)+'</button>').join('')+'</div>';
+  d.querySelector('[data-x]').onclick = () => d.close();
+  d.querySelectorAll('.dlg-f button').forEach(b => b.onclick = () => {
+    const a = buttons[Number(b.dataset.i)][1];
+    if (a === null){ d.close(); return; }
+    const r = onAct(a); if (r !== false) d.close();
+  });
+  if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open','');
+}
+
+/* ---------- événements ---------- */
+function bind(root){
+  root.querySelectorAll('[data-act]').forEach(el => {
+    const fire = () => {
+      const a = el.dataset.act, v = el.dataset.v;
+      if (a==='tournee'){ ui.tournee = v; render(); }
+      else if (a==='day'){ ui.date = addDays(ui.date, Number(v)); render(); }
+      else if (a==='today'){ ui.date = today(); render(); }
+      else if (a==='editPassage') dlgEditPassage(el.dataset.k);
+      else if (a==='dfilt'){ ui.demandeFiltre = v; ui.demandeSel = null; render(); }
+      else if (a==='dsel'){ ui.demandeSel = v; render(); }
+      else if (a==='newDemande') dlgNewDemande();
+      else if (['propose','reopen','confirm','apply','refuse'].includes(a)) demandeAction(a, v);
+      else if (a==='openPatient') location.hash = '#patient/'+v;
+      else if (a==='trf'){ ui.trFiltre = v; render(); }
+      else if (a==='newTr') dlgTransmission(v);
+      else if (a==='closeTr'){ const [pid,tid] = v.split('|'); commit(() => { const x = patient(pid).transmissions.find(t=>t.id===tid); x.ouverte=false; }, 'Cible clôturée'); }
+      else if (a==='editPatient') dlgEditPatient(v);
+      else if (a==='absence') dlgAbsence(v);
+      else if (a==='asNurse'){ who = v; render(); }
+      else if (a==='validate') dlgValidate(v);
+      else if (a==='notDone') dlgNotDone(v);
+      else if (a==='late'){ const x = findPassage(v); commit(s => { s.retards = s.retards||[]; s.retards.push({date:today(),h:nowHM(),nurse:whoName(),patient:x.p.nom}); }, 'Retard signalé à la coordination'); }
+      else if (a==='waPaste') dlgWhatsApp();
+      else if (a==='newPatient') dlgNewPatient();
+      else if (a==='plan'){ const [pid,plid] = v.split('|'); dlgPlan(pid, plid||null); }
+      else if (a==='togglePatient') commit(() => { const p = patient(v); p.statut = p.statut==='arrete' ? 'actif' : 'arrete'; }, 'Statut du patient mis à jour');
+      else if (a==='deletePatient'){ const p = patient(v); openDlg('Supprimer '+p.nom, '<p style="margin:0">Le patient, ses soins et ses transmissions seront supprimés définitivement.</p>', [['Annuler',null],['Supprimer','ok',true]], r => { if (r==='ok'){ commit(s => { s.patients = s.patients.filter(x => x.id!==v); }, 'Patient supprimé'); location.hash = '#patients'; } }); }
+      else if (a==='nurse') dlgNurse(v||null);
+      else if (a==='backup') offerFile('coordination-sauvegarde-'+today()+'.json', JSON.stringify(S, null, 1));
+      else if (a==='csvPlanning') csvPlanning();
+      else if (a==='csvPatients') csvPatients();
+      else if (a==='wipe'){ openDlg('Vider toutes les données', '<p style="margin:0">Toutes les données seront effacées pour repartir de zéro. Pensez à télécharger une sauvegarde avant.</p>', [['Annuler',null],['Tout effacer','ok',true]], r => { if (r==='ok'){ S = emptyState(); save(); location.hash = '#equipe'; render(); toast('Données effacées'); } }); }
+      else if (a==='reset'){ openDlg('Réinitialiser les données', '<p style="margin:0">Toutes les modifications seront remplacées par les données d\u2019exemple, pour toute l\u2019équipe.</p>', [['Annuler',null],['Réinitialiser','ok',true]], r => { if (r==='ok'){ S = demoState(); save(); render(); toast('Données d\u2019exemple rechargées'); } }); }
+    };
+    el.addEventListener('click', fire);
+    if (el.tagName==='TR') el.addEventListener('keydown', e => { if (e.key==='Enter') fire(); });
+  });
+  const ri = root.querySelector('#restoreIn'); if (ri) ri.onchange = () => { const f = ri.files[0]; if (!f) return; const rd = new FileReader();
+    rd.onload = () => { let data; try { data = JSON.parse(rd.result); } catch(e){ toast('Fichier illisible'); return; }
+      if (!data || !Array.isArray(data.nurses) || !Array.isArray(data.patients)){ toast('Ce fichier n\u2019est pas une sauvegarde valide'); return; }
+      openDlg('Restaurer la sauvegarde', '<p style="margin:0">Les données actuelles seront remplacées par celles du fichier ('+data.patients.length+' patients, '+data.nurses.length+' soignants).</p>', [['Annuler',null],['Restaurer','ok',true]], r => { if (r==='ok'){ S = Object.assign(emptyState(), data); save(); render(); toast('Sauvegarde restaurée'); } }); };
+    rd.readAsText(f); };
+  const di = root.querySelector('#dateIn'); if (di) di.onchange = () => { if (di.value){ ui.date = di.value; render(); } };
+  const pq = root.querySelector('#pQ'); if (pq) pq.oninput = () => { ui.patientQ = pq.value; const pos = pq.selectionStart; render(); const n = document.getElementById('pQ'); n.focus(); n.setSelectionRange(pos,pos); };
+}
+document.getElementById('whoSel').addEventListener('change', e => { who = e.target.value; if (who!=='coord' && route.view==='planning') location.hash = '#tournee'; else render(); });
+function onHash(){
+  const h = location.hash.slice(1) || 'planning';
+  if (h.startsWith('patient/')) route = {view:'patient', id:h.split('/')[1]};
+  else route = {view: VIEWS.some(v=>v[0]===h) ? h : 'planning'};
+  ui.trFiltre = 'toutes';
+  if (S) render();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', onHash);
+onHash();
+initStore();
+})();
+</script>
+</body>
+</html>
